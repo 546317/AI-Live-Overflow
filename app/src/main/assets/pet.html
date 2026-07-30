@@ -149,9 +149,8 @@ body {
       <path d="M120,155 L130,185 L127,190 L122,185 Z" fill="#8B7355" stroke="#6B5335" stroke-width="2"/>
     </g>
     
-    <!-- 表情变化层（通过class切换） -->
+    <!-- 表情变化层 -->
     <g id="petAngry" style="display:none;">
-      <!-- 愤怒眉毛 -->
       <path d="M70,85 L75,90" stroke="#333" stroke-width="2" stroke-linecap="round"/>
       <path d="M100,85 L105,90" stroke="#333" stroke-width="2" stroke-linecap="round"/>
     </g>
@@ -159,54 +158,54 @@ body {
 </div>
 
 <script>
+// ========== PetBridge - 本地数据获取，不走网络 ============
+function fetchPetState() {
+  if (window.PetBridge) {
+    try {
+      const data = window.PetBridge.getPetState();
+      const state = JSON.parse(data);
+      if (state.mood) setMood(state.mood);
+      return state;
+    } catch(e) {
+      console.log('PetBridge error:', e);
+    }
+  }
+  return null;
+}
+
 // ========== Engine Interface ============
 const petEngine = {
+  mood: 'happy',
+  energy: 80,
+  
   onTap: function() {
     showSpeech('汪！');
-    triggerReaction('tap');
-    window.Android?.reportGesture('tap');
     playAnimation('wiggle');
+    petEngine.mood = 'happy';
   },
   
   onDoubleTap: function() {
     showSpeech('嘿嘿~');
-    triggerReaction('doubleTap');
-    window.Android?.reportGesture('double_tap');
     playAnimation('jump');
+    petEngine.mood = 'happy';
   },
   
   onLongPress: function() {
     showSpeech('摸摸～');
-    triggerReaction('longPress');
-    window.Android?.reportGesture('long_press');
     playAnimation('stretch');
-  },
-  
-  onFling: function(x, y) {
-    showSpeech('回来啦！');
-    triggerReaction('fling');
-    window.Android?.reportGesture('fling');
-    playAnimation('flyBack');
+    petEngine.mood = 'happy';
   },
   
   onDragEnd: function() {
     showSpeech('贴贴～');
-    triggerReaction('drag');
-    window.Android?.reportGesture('drag');
+    playAnimation('stretch');
   },
   
-  onScreenshot: function() {
-    showSpeech('咔嚓！');
-    triggerReaction('screenshot');
-    window.Android?.reportGesture('screenshot');
-    playAnimation('pose');
-  },
-  
-  // External command from AI (via Supabase)
   command: function(action, value) {
     switch(action) {
       case 'setMood':
         setMood(value);
+        petEngine.mood = value;
         break;
       case 'showBubble':
         showSpeech(value);
@@ -216,6 +215,11 @@ const petEngine = {
         break;
       case 'wake':
         playAnimation('wakeUp');
+        break;
+      case 'feed':
+        showSpeech('好吃！');
+        petEngine.energy = Math.min(100, petEngine.energy + 10);
+        playAnimation('jump');
         break;
     }
   }
@@ -229,15 +233,12 @@ function showSpeech(text) {
   setTimeout(() => bubble.classList.remove('show'), 2000);
 }
 
-function triggerReaction(type) {
-  console.log('Pet reaction:', type);
-  // Could log to backend here
-}
-
 function setMood(mood) {
   const body = document.getElementById('petBody');
-  const eyes = document.getElementById('petEyes');
-  const tail = document.getElementById('petTail');
+  const angry = document.getElementById('petAngry');
+  
+  body.style.filter = 'none';
+  angry.style.display = 'none';
   
   switch(mood) {
     case 'happy':
@@ -245,15 +246,14 @@ function setMood(mood) {
       break;
     case 'sleep':
       document.getElementById('petEyes').style.display = 'none';
-      tail.style.opacity = '0.5';
       break;
     case 'angry':
-      document.getElementById('petAngry').style.display = 'block';
+      angry.style.display = 'block';
       body.classList.add('pet-cangry');
       setTimeout(() => body.classList.remove('pet-cangry'), 500);
       break;
     default:
-      body.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))';
+      break;
   }
 }
 
@@ -274,14 +274,6 @@ function playAnimation(name) {
     case 'stretch':
       body.style.transform = 'scaleX(1.2)';
       setTimeout(() => body.style.transform = 'scaleX(1)', 500);
-      break;
-    case 'flyBack':
-      body.style.transition = 'all 1s ease';
-      body.style.transform = 'translateX(-100px)';
-      setTimeout(() => {
-        body.style.transition = 'all 0.5s ease';
-        body.style.transform = 'translateX(0)';
-      }, 500);
       break;
     case 'pose':
       body.style.transform = 'scale(1.1)';
@@ -339,11 +331,6 @@ container.addEventListener('touchend', function(e) {
     }
     lastTapTime = Date.now();
   } else {
-    // Drag ended - check if it was a fling
-    const containerRect = container.getBoundingClientRect();
-    const petX = containerRect.left + container.offsetWidth / 2;
-    const petY = containerRect.top + container.offsetHeight / 2;
-    // Simple fling detection
     petEngine.onDragEnd();
   }
   
@@ -353,37 +340,23 @@ container.addEventListener('touchend', function(e) {
   container.style.transform = '';
 }, {passive: false});
 
-// ========== Supabase Polling ============
-async function pollState() {
-  try {
-    const response = await fetch('https://giqjvwczceugdkteexhv.supabase.co/rest/v1/pet_state?order=updated_at.desc&limit=1', {
-      headers: {
-        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpcWp2d2N6Y2V1Z2RrdGVleGh2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NTIyMDk0NCwiZXhwIjoyMTAwNzk2OTQ0fQ.yd-Ejpx9AeFCiHuBzUpIUfiIwqmXTUgWhA25dyHnsG4',
-        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpcWp2d2N6Y2V1Z2RrdGVleGh2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NTIyMDk0NCwiZXhwIjoyMTAwNzk2OTQ0fQ.yd-Ejpx9AeFCiHuBzUpIUfiIwqmXTUgWhA25dyHnsG4'
-      }
-    });
-    const data = await response.json();
-    if (data.length > 0 && data[0].state_key === 'mood') {
-      setMood(data[0].state_value);
-    }
-    if (data.length > 0 && data[0].state_key === 'bubble') {
-      showSpeech(data[0].state_value);
-    }
-  } catch(e) {
-    console.log('Polling error:', e);
+// ========== 本地轮询（每5秒随机变化，模拟生命感）============
+setInterval(() => {
+  const r = Math.random();
+  if (r < 0.1) {
+    const moods = ['happy', 'happy', 'happy', 'neutral', 'angry'];
+    const newMood = moods[Math.floor(Math.random() * moods.length)];
+    setMood(newMood);
+    petEngine.mood = newMood;
   }
-}
-
-setInterval(pollState, 30000);
-
-// Expose to Android
-window.petEngine = petEngine;
-window.Android = {
-  reportGesture: function(type) {
-    // Android will handle this via evaluateJavascript
-    console.log('Gesture:', type);
+  if (r < 0.05) {
+    const speeches = ['…', '想你', '汪', '好无聊', '抱抱'];
+    showSpeech(speeches[Math.floor(Math.random() * speeches.length)]);
   }
-};
+}, 5000);
+
+// ========== 从 PetBridge 获取初始化数据 ============
+fetchPetState();
 
 // Initial wake-up animation
 setTimeout(() => {
