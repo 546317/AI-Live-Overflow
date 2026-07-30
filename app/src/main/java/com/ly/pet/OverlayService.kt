@@ -1,5 +1,3 @@
-package com.ly.pet
-
 import android.app.*
 import android.content.Context
 import android.content.Intent
@@ -12,13 +10,18 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import java.net.HttpURLConnection
 import java.net.URL
-import java.net.JSONObject
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.Timer
+import java.util.TimerTask
+import org.json.JSONObject
 
-class OverlayService : Service() {
-    companion object {
-        private const val NOTIFICATION_ID = 1
-        private const val CHANNEL_ID = "pet_channel"
-        private val SUPABASE_URL = "https://giqjvwczceugdkteexhv.supabase.co"
+class OverlayService : Service() {类 OverlayService：Service() {
+    companion object {伴侣 对象 {
+        private const val NOTIFICATION_ID = 1私有 常量 值 NOTIFICATION_ID = 1
+        private const val CHANNEL_ID = "pet_channel"私有 常量 值 CHANNEL_ID = "pet_channel"
+        private val SUPABASE_URL = "https://giqjvwczceugdkteexhv.supabase.co"私有 值 SUPABASE_URL = "https://giqjvwczceugdkteexhv.supabase.co"
         private val SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpcWp2d2N6Y2V1Z2RrdGVleGh2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NTIyMDk0NCwiZXhwIjoyMTAwNzk2OTQ0fQ.yd-Ejpx9AeFCiHuBzUpIUfiIwqmXTUgWhA25dyHnsG4"
     }
 
@@ -100,10 +103,10 @@ class OverlayService : Service() {
                 }
             }, 0, 3600_000)
         }
-        log("Whisper rotation started")
+        log("Whisper rotation started")日志(“低语轮换已启动”)
     }
 
-    private fun updateNotification() {
+    private fun updateNotification() {私有 函数 更新通知() {
         val whispers = listOf(
             "莉莉在吗？",
             "想你啦",
@@ -116,61 +119,54 @@ class OverlayService : Service() {
         val whisper = whispers.random()
         notificationManager?.notify(NOTIFICATION_ID,
             NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentText(whisper)
+                .setContentText(whisper).setContentText(低语)
                 .setSmallIcon(R.drawable.ic_pet)
                 .setOngoing(true)
                 .setSilent(true)
                 .build()
         )
-        log("Whisper updated: $whisper")
+        log("Whisper updated: $whisper"“Whisper已更新：$whisper”)
     }
 
-    override fun onBind(intent: Intent?): IBinder? = null
+    override重写 fun onBind(intent: Intent?): IBinder? = null
 
-    override fun onDestroy() {
+    override重写 fun onDestroy() {
         overlayView?.let {
             windowManager?.removeView(it)
-            it.destroy()
+            it.destroy()它.销毁()
         }
         windowManager?.let {
             if (overlayView != null) windowManager?.removeView(overlayView)
         }
         whisperTimer?.cancel()
         super.onDestroy()
-        log("Overlay service destroyed")
+        log("Overlay service destroyed"“覆盖服务已销毁”)
     }
 
-    private fun log(msg: String) {
-        Log.d("OverlayService", msg)
+    private私有 fun log日志(msg: String) {(msg: 字符串) {
+        Log.d("OverlayService"“叠加服务”, msg)
     }
 
-    fun setState(key: String, value: String) {
-        try {
+    fun setState(key: String, value: String) {（key：String，value：String）{
+        try尝试 {尝试 {
             val url = URL("$SUPABASE_URL/rest/v1/pet_state")
-            conn(url) {
-                method = "POST"
-                setRequestProperty("Content-Type", "application/json")
-                setRequestProperty("apikey", SUPABASE_KEY)
-                setRequestProperty("Authorization", "Bearer $SUPABASE_KEY")
-                val body = JSONObject().apply {
-                    put("state_key", key)
-                    put("state_value", value)
-                    put("updated_at", SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).format(Date()))
-                }.toString()
-                outputStream.write(body.toByteArray())
-                responseCode
-                disconnect()
-            }
-            log("State set: $key = $value")
-        } catch (e: Exception) {
-            log("Failed to set state: ${e.message}")
+            val conn = url.openConnection() as HttpURLConnection
+            conn.method = "POST"
+            conn.setRequestProperty("Content-Type", "application/json")
+            conn.setRequestProperty("apikey", SUPABASE_KEY)
+            conn.setRequestProperty("Authorization", "Bearer $SUPABASE_KEY")
+            val body = JSONObject().apply {
+                put("state_key", key)
+                put("state_value", value)
+                put("updated_at", SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).format(Date()))
+            }.toString()
+            conn.outputStream.write(body.toByteArray())
+            conn.responseCode
+            conn.disconnect()
+            log("State set: $key = $value")log("状态已设置：$key = $value")
+        } catch (e: Exception) {        } 捕获(e: 异常) {
+            log("Failed to set state: ${e.message}")log("设置状态失败：${e.message}")日志(“设置状态失败：${e.message}”)日志(“设置状态失败：${e.message}”)
         }
     }
-
-    private fun conn(block: HttpURLConnection.() -> Unit): HttpURLConnection {
-        val url = URL(it)
-        val conn = url.openConnection() as HttpURLConnection
-        conn.block()
-        return conn
-    }
 }
+```
