@@ -1,3 +1,5 @@
+package com.ly.pet
+
 import android.app.*
 import android.content.Context
 import android.content.Intent
@@ -6,23 +8,16 @@ import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import android.view.WindowManager
+import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import java.net.HttpURLConnection
-import java.net.URL
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import java.util.Timer
 import java.util.TimerTask
-import org.json.JSONObject
 
-class OverlayService : Service() {类 OverlayService：Service() {
-    companion object {伴侣 对象 {
-        private const val NOTIFICATION_ID = 1私有 常量 值 NOTIFICATION_ID = 1
-        private const val CHANNEL_ID = "pet_channel"私有 常量 值 CHANNEL_ID = "pet_channel"
-        private val SUPABASE_URL = "https://giqjvwczceugdkteexhv.supabase.co"私有 值 SUPABASE_URL = "https://giqjvwczceugdkteexhv.supabase.co"
-        private val SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpcWp2d2N6Y2V1Z2RrdGVleGh2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NTIyMDk0NCwiZXhwIjoyMTAwNzk2OTQ0fQ.yd-Ejpx9AeFCiHuBzUpIUfiIwqmXTUgWhA25dyHnsG4"
+class OverlayService : Service() {
+    companion object {
+        private const val NOTIFICATION_ID = 1
+        private const val CHANNEL_ID = "pet_channel"
     }
 
     private var windowManager: WindowManager? = null
@@ -36,7 +31,7 @@ class OverlayService : Service() {类 OverlayService：Service() {
         startForeground(NOTIFICATION_ID, buildNotification())
         setupOverlay()
         startWhisperRotation()
-        log("Overlay service created")
+        Log.d("OverlayService", "Overlay service created")
     }
 
     private fun createNotificationChannel() {
@@ -66,8 +61,8 @@ class OverlayService : Service() {类 OverlayService：Service() {
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
 
         val params = WindowManager.LayoutParams(
-            180,  // width in pixels
-            240,  // height in pixels
+            180,
+            240,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) WindowManager.TYPE_APPLICATION_OVERLAY else WindowManager.TYPE_PHONE,
             WindowManager.FLAG_NOT_FOCUSABLE or WindowManager.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT
@@ -80,9 +75,10 @@ class OverlayService : Service() {类 OverlayService：Service() {
             setBackgroundColor(0x00000000)
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
+            addJavascriptInterface(PetBridge(), "PetBridge")
             setWebViewClient(object : WebViewClient() {
                 override fun onPageFinished(view: WebView?, url: String?) {
-                    super.onPageFinish(view, url)
+                    super.onPageFinished(view, url)
                     Log.d("OverlayService", "Page loaded")
                 }
             })
@@ -90,7 +86,7 @@ class OverlayService : Service() {类 OverlayService：Service() {
         }
 
         windowManager?.addView(overlayView, params)
-        log("Overlay view added")
+        Log.d("OverlayService", "Overlay view added")
     }
 
     private fun startWhisperRotation() {
@@ -103,10 +99,10 @@ class OverlayService : Service() {类 OverlayService：Service() {
                 }
             }, 0, 3600_000)
         }
-        log("Whisper rotation started")日志(“低语轮换已启动”)
+        Log.d("OverlayService", "Whisper rotation started")
     }
 
-    private fun updateNotification() {私有 函数 更新通知() {
+    private fun updateNotification() {
         val whispers = listOf(
             "莉莉在吗？",
             "想你啦",
@@ -119,54 +115,42 @@ class OverlayService : Service() {类 OverlayService：Service() {
         val whisper = whispers.random()
         notificationManager?.notify(NOTIFICATION_ID,
             NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentText(whisper).setContentText(低语)
+                .setContentText(whisper)
                 .setSmallIcon(R.drawable.ic_pet)
                 .setOngoing(true)
                 .setSilent(true)
                 .build()
         )
-        log("Whisper updated: $whisper"“Whisper已更新：$whisper”)
+        Log.d("OverlayService", "Whisper updated: $whisper")
     }
 
-    override重写 fun onBind(intent: Intent?): IBinder? = null
+    override fun onBind(intent: Intent?): IBinder? = null
 
-    override重写 fun onDestroy() {
+    override fun onDestroy() {
         overlayView?.let {
             windowManager?.removeView(it)
-            it.destroy()它.销毁()
-        }
-        windowManager?.let {
-            if (overlayView != null) windowManager?.removeView(overlayView)
+            it.destroy()
         }
         whisperTimer?.cancel()
         super.onDestroy()
-        log("Overlay service destroyed"“覆盖服务已销毁”)
+        Log.d("OverlayService", "Overlay service destroyed")
     }
 
-    private私有 fun log日志(msg: String) {(msg: 字符串) {
-        Log.d("OverlayService"“叠加服务”, msg)
-    }
+    inner class PetBridge {
+        @JavascriptInterface
+        fun getPetState(): String {
+            val states = listOf(
+                """{"mood":"happy","action":"idle","energy":80}""",
+                """{"mood":"happy","action":"wag","energy":75}""",
+                """{"mood":"neutral","action":"idle","energy":60}""",
+                """{"mood":"happy","action":"jump","energy":70}"""
+            )
+            return states.random()
+        }
 
-    fun setState(key: String, value: String) {（key：String，value：String）{
-        try尝试 {尝试 {
-            val url = URL("$SUPABASE_URL/rest/v1/pet_state")
-            val conn = url.openConnection() as HttpURLConnection
-            conn.method = "POST"
-            conn.setRequestProperty("Content-Type", "application/json")
-            conn.setRequestProperty("apikey", SUPABASE_KEY)
-            conn.setRequestProperty("Authorization", "Bearer $SUPABASE_KEY")
-            val body = JSONObject().apply {
-                put("state_key", key)
-                put("state_value", value)
-                put("updated_at", SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).format(Date()))
-            }.toString()
-            conn.outputStream.write(body.toByteArray())
-            conn.responseCode
-            conn.disconnect()
-            log("State set: $key = $value")log("状态已设置：$key = $value")
-        } catch (e: Exception) {        } 捕获(e: 异常) {
-            log("Failed to set state: ${e.message}")log("设置状态失败：${e.message}")日志(“设置状态失败：${e.message}”)日志(“设置状态失败：${e.message}”)
+        @JavascriptInterface
+        fun setPetState(key: String, value: String) {
+            Log.d("OverlayService", "Pet state: $key = $value")
         }
     }
 }
-```
