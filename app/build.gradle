@@ -4,7 +4,7 @@ plugins {
 
 android {
     compileSdk 34
-    
+
     defaultConfig {
         applicationId "com.ly.pet"
         minSdk 26
@@ -12,7 +12,7 @@ android {
         versionCode 1
         versionName "1.0"
     }
-    
+
     buildTypes {
         release {
             minifyEnabled false
@@ -21,10 +21,13 @@ android {
             minifyEnabled false
         }
     }
+
     compileOptions {
-        sourceCompatibility 1_8
-        targetCompatibility 1_8
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
+}
+
 dependencies {
     implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.9.0'
     implementation 'androidx.core:core-ktx:1.12.0'
