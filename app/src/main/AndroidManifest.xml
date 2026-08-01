@@ -15,9 +15,9 @@
         <activity
             android:name=".PetActivity"
             android:exported="false"
-            android:theme="@android:style/Theme.NoBackground"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
             android:windowIsTranslucent="true"
-            android:showDuringLockscreen="true"
+            android:showOnLockScreen="true"
             android:keyguardHidden="true"/>
     </application>
 </manifest>
