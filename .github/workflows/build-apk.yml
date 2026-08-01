@@ -47,4 +47,4 @@ jobs:
         with:
           name: apk
           path: app/build/outputs/apk/release/app-release-signed.apk
-          retention-days: 7
+          retention-days: 7 
