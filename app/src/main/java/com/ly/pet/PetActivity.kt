@@ -23,11 +23,9 @@ class PetActivity : Activity() {
         btn.text = "启动"
         btn.setOnClickListener {
             if (!Settings.canDrawOverlays(this)) {
-                // 没权限，去设置
                 val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
                 startActivity(intent)
             } else {
-                // 有权限，启动服务
                 startService(Intent(this, OverlayService::class.java))
                 finish()
             }
