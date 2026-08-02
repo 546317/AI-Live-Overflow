@@ -5,8 +5,7 @@
 
     <application
         android:allowBackup="true"
-        android:label="桌宠"
-        android:theme="@android:style/Theme.Light">
+        android:label="桌宠">
         
         <activity 
             android:name="com.ly.pet.PetActivity"
@@ -19,4 +18,5 @@
             
     </application>
 </manifest>
+
 
