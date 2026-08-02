@@ -5,7 +5,9 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.PixelFormat
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.util.Log
 import android.view.WindowManager
 import android.webkit.JavascriptInterface
@@ -90,10 +92,11 @@ class OverlayService : Service() {
     }
 
     private fun startWhisperRotation() {
+        val handler = Handler(Looper.getMainLooper())
         whisperTimer = Timer().apply {
             scheduleAtFixedRate(object : TimerTask() {
                 override fun run() {
-                    runOnUiThread {
+                    handler.post {
                         updateNotification()
                     }
                 }
