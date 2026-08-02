@@ -13,6 +13,7 @@ import android.view.WindowManager
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.core.app.NotificationCompat
 import java.util.Timer
 import java.util.TimerTask
 
