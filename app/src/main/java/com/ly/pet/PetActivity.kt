@@ -3,13 +3,14 @@ package com.ly.pet
 import android.app.Activity
 import android.graphics.Color
 import android.os.Bundle
-import android.widget.FrameLayout
+import android.widget.TextView
 
 class PetActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val layout = FrameLayout(this)
-        layout.setBackgroundColor(Color.RED)
-        setContentView(layout)
+        val tv = TextView(this)
+        tv.text = "桌宠测试"
+        tv.setBackgroundColor(Color.RED)
+        setContentView(tv)
     }
 }
