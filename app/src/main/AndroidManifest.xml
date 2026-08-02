@@ -14,8 +14,13 @@
             android:foregroundServiceType="mediaPlayback"/>
         <activity
             android:name=".PetActivity"
-            android:exported="false"
+            android:exported="true"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"
-            android:windowIsTranslucent="true"/>
+            android:windowIsTranslucent="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
     </application>
 </manifest>
