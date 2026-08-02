@@ -1,33 +1,47 @@
 package com.ly.pet
 
 import android.app.Activity
-import android.content.Intent
-import android.net.Uri
+import android.graphics.PixelFormat
 import android.os.Bundle
-import android.provider.Settings
+import android.view.WindowManager
+import android.webkit.WebView
+import android.webkit.WebViewClient
 
 class PetActivity : Activity() {
+    private var windowManager: WindowManager? = null
+    private var overlayView: WebView? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (!Settings.canDrawOverlays(this)) {
-            val intent = Intent(
-                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                Uri.parse("package:$packageName")
-            )
-            startActivityForResult(intent, 1001)
-        } else {
-            startService(Intent(this, OverlayService::class.java))
-            finish()
+
+        windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+
+        val params = WindowManager.LayoutParams(
+            180,
+            240,
+            WindowManager.TYPE_APPLICATION,
+            WindowManager.FLAG_NOT_FOCUSABLE,
+            PixelFormat.TRANSLUCENT
+        ).apply {
+            x = 50
+            y = 300
         }
+
+        overlayView = WebView(this).apply {
+            setBackgroundColor(0x00000000)
+            settings.javaScriptEnabled = true
+            setWebViewClient(WebViewClient())
+            loadUrl("file:///android_asset/pet.html")
+        }
+
+        windowManager?.addView(overlayView, params)
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == 1001) {
-            if (Settings.canDrawOverlays(this)) {
-                startService(Intent(this, OverlayService::class.java))
-            }
-            finish()
+    override fun onDestroy() {
+        overlayView?.let {
+            windowManager?.removeView(it)
+            it.destroy()
         }
+        super.onDestroy()
     }
 }
